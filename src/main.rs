@@ -2,7 +2,8 @@ use std::{cell::RefCell, time::Instant};
 
 use sfml::{
     graphics::{
-        CircleShape, Color, RenderStates, RenderTarget, RenderTexture, RenderWindow, Shader, ShaderType, Sprite, Texture
+        CircleShape, Color, RenderStates, RenderTarget, RenderTexture, RenderWindow, Shader,
+        ShaderType, Sprite, Texture,
     },
     system::Vector2f,
     window::{Event, Key, Style},
@@ -29,13 +30,13 @@ fn main() {
     // Set up pre-fx render texture
     let mut pre_render_texture = RenderTexture::new(WINDOW_WIDTH, WINDOW_HEIGHT).unwrap();
 
-    // Load and apply shaders
+    // Load shaders
     let mut fx_blur_frag_shader: RefCell<Shader> =
-        Shader::from_file("./res/shaders/blur_frag.glsl", ShaderType::Fragment).unwrap().into();
-    let mut fx_blur_vert_shader: Shader =  Shader::from_file("./res/shaders/blur_vert.glsl", ShaderType::Vertex).unwrap();
-    //let mut blur_shader: RefCell<Shader> = Shader::from_file("./res/shaders/blur_vert.glsl", ShaderType::Vertex).unwrap().into();
-
-    
+        Shader::from_file("./res/shaders/blur_frag.glsl", ShaderType::Fragment)
+            .unwrap()
+            .into();
+    let mut fx_blur_vert_shader: Shader =
+        Shader::from_file("./res/shaders/blur_vert.glsl", ShaderType::Vertex).unwrap();
 
     // Set up tick system
     const UPDATE_TICK_TIME_MS: u128 = 25;
@@ -73,12 +74,10 @@ fn main() {
                 } => return,
                 Event::MouseButtonPressed { button, x, y } => {
                     follow_mouse_pos = !follow_mouse_pos;
-                },
-                Event::KeyPressed {
-                    code: Key::E, ..
-                } => {
+                }
+                Event::KeyPressed { code: Key::E, .. } => {
                     focus_point_inversed = !focus_point_inversed;
-                },
+                }
                 _ => {}
             }
         }
@@ -86,10 +85,13 @@ fn main() {
         // Update sim every UPDATE_TICK_TIME
         if last_update_tick.elapsed().as_millis() >= UPDATE_TICK_TIME_MS {
             if follow_mouse_pos {
-                world.set_entity_focus_point(Vector2f::new(
-                    window.mouse_position().x as f32,
-                    window.mouse_position().y as f32
-                ), focus_point_inversed);
+                world.set_entity_focus_point(
+                    Vector2f::new(
+                        window.mouse_position().x as f32,
+                        window.mouse_position().y as f32,
+                    ),
+                    focus_point_inversed,
+                );
             }
             world.update();
             last_update_tick = Instant::now();
@@ -104,15 +106,11 @@ fn main() {
                 ticks_not_cleared += 1;
             }
 
-            fx_blur_frag_shader.borrow_mut().set_uniform_array_vec2("u_texture_size_inv", &[Vector2f::new(1.0 / WINDOW_WIDTH as f32, 1.0 / WINDOW_HEIGHT as f32)]);
-            //fx_blur_vert_shader.set_uniform_array_vec2("u_texture_size_inv", &[Vector2f::new(1.0 / WINDOW_WIDTH as f32, 1.0 / WINDOW_HEIGHT as f32)]);
-
-            main_render_states.set_shader(Some(&fx_blur_frag_shader()));
-            //main_render_states.set_shader(Some(&fx_blur_vert_shader));
-            
-            
             world.draw(&mut pre_render_texture);
-            window.draw_with_renderstates(&Sprite::with_texture(&pre_render_texture.texture()), &main_render_states);
+            window.draw_with_renderstates(
+                &Sprite::with_texture(&pre_render_texture.texture()),
+                &main_render_states,
+            );
 
             window.display();
 
