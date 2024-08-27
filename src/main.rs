@@ -1,4 +1,4 @@
-use std::{cell::RefCell, time::Instant};
+use std::{cell::RefCell, fmt::format, time::Instant};
 
 use sfml::{
     graphics::{
@@ -26,6 +26,7 @@ fn main() {
     );
     let mut main_render_states = RenderStates::default();
     window.set_vertical_sync_enabled(true);
+    window.set_mouse_cursor_visible(false);
 
     // Set up pre-fx render texture - WIP
     let mut pre_render_texture = RenderTexture::new(WINDOW_WIDTH, WINDOW_HEIGHT).unwrap();
@@ -49,9 +50,13 @@ fn main() {
     const CLEAR_INTERVAL: u32 = 0;
     let mut ticks_not_cleared = CLEAR_INTERVAL;
 
+    let mut fps = 0;
+    let mut frames: i32 = 1;
+    let mut last_frame_count = Instant::now();
+
     // Initiate sim logic
     let mut world = World::new(
-        45000,
+        30000,
         (0.35, 0.5),
         (5., 12.5),
         (
@@ -62,16 +67,36 @@ fn main() {
         ),
     );
 
+    const FOCAL_STRENGHT_MOD: f32 = 0.005;
+
     let mut follow_mouse_pos = false;
     let mut focus_point_inversed = false;
     let mut draw_cursor = true;
     let mut mapped_cursor_pos = Vector2f::default();
     let mut user_has_clicked_anywhere = false;
+    let mut map_color = true;
+    let mut current_focal_strength = 0.07;
+
+    // UI
+    const UI_INFO_DISPLAY_FONT_SIZE: u32 = 25;
+    const UI_INFO_DISPLAY_OFFSET: f32 = 15.0;
 
     let mut cursor_shape = CircleShape::new(4.0, 20);
     cursor_shape.set_fill_color(Color::rgba(33, 33, 33, 150));
     cursor_shape.set_outline_color(Color::rgb(200, 200, 210));
     cursor_shape.set_outline_thickness(2.0);
+
+    let mut focal_strength_label = Text::new("..", &default_font, UI_INFO_DISPLAY_FONT_SIZE);
+    focal_strength_label.set_position(Vector2f::new(
+        UI_INFO_DISPLAY_OFFSET,
+        UI_INFO_DISPLAY_OFFSET,
+    ));
+
+    let mut fps_label = Text::new("..", &default_font, UI_INFO_DISPLAY_FONT_SIZE);
+    fps_label.set_position(Vector2f::new(
+        UI_INFO_DISPLAY_OFFSET,
+        UI_INFO_DISPLAY_OFFSET * 3.0,
+    ));
 
     // Main sim loop
     loop {
@@ -91,6 +116,19 @@ fn main() {
                 }
                 Event::KeyPressed { code: Key::R, .. } => {
                     draw_cursor = !draw_cursor;
+                    window.set_mouse_cursor_visible(!draw_cursor);
+                }
+                Event::KeyPressed { code: Key::T, .. } => {
+                    map_color = !map_color;
+                }
+                Event::KeyPressed {
+                    code: Key::Subtract,
+                    ..
+                } => {
+                    current_focal_strength -= FOCAL_STRENGHT_MOD;
+                }
+                Event::KeyPressed { code: Key::Add, .. } => {
+                    current_focal_strength += FOCAL_STRENGHT_MOD;
                 }
                 _ => {}
             }
@@ -109,11 +147,25 @@ fn main() {
                 ),
             ); // Quick and dirty fix for a quick and dirty project..
 
+            // Logic updates
             if follow_mouse_pos {
-                world.set_entity_focus_point(mapped_cursor_pos, focus_point_inversed);
+                world.set_entity_focus_point(
+                    mapped_cursor_pos,
+                    focus_point_inversed,
+                    current_focal_strength,
+                );
             }
-            world.update();
+            world.update(map_color);
             last_update_tick = Instant::now();
+
+            // Update UI
+            focal_strength_label.set_string(&format!("force: {:.1$}", current_focal_strength, 3));
+            fps_label.set_string(&format!("fps: {}", fps));
+
+            if last_frame_count.elapsed().as_secs() >= 60 {
+                frames = 0;
+                last_frame_count = Instant::now();
+            }
         }
 
         // Render sim every RENDER_TICK_TIME
@@ -125,6 +177,7 @@ fn main() {
                 ticks_not_cleared += 1;
             }
 
+            // Draw particles and mapped cursor to render texture
             world.draw(&mut pre_render_texture);
 
             if draw_cursor {
@@ -136,26 +189,36 @@ fn main() {
                 pre_render_texture.draw(&cursor_shape);
             }
 
-            if !user_has_clicked_anywhere {
-                let mut hint_text = Text::new("CIICK", &default_font, 15); // TODO: remove this jank make render texture unmirrored
-                hint_text.set_position(Vector2f::new(
-                    window.size().x as f32 / 2.0 - hint_text.get_scale().x,
-                    window.size().y as f32 / 2.0 - hint_text.get_scale().y,
-                ));
-
-                pre_render_texture.draw(&hint_text);
-            }
-
             let mut render_texture_sprite = Sprite::with_texture(&pre_render_texture.texture());
             let render_texture_origin = Vector2f::new(0.0, 0.0);
             render_texture_sprite.set_origin(render_texture_origin);
             render_texture_sprite.rotate(0.0);
 
+            // Draw render texture to window with shader effects (WIP)
             window.draw_with_renderstates(&render_texture_sprite, &main_render_states);
+
+            // Draw UI to window over particle texture
+            if !user_has_clicked_anywhere {
+                let mut hint_text = Text::new("click anywhere", &default_font, 22);
+                hint_text.set_position(Vector2f::new(
+                    window.size().x as f32 / 2.0 - hint_text.global_bounds().width / 2.0,
+                    window.size().y as f32 / 2.0 - hint_text.global_bounds().height / 2.0,
+                ));
+
+                window.draw(&hint_text);
+            }
+
+            window.draw(&focal_strength_label);
+            window.draw(&fps_label);
 
             window.display();
 
             last_render_tick = Instant::now();
+            frames += 1;
+            match frames.checked_div(last_frame_count.elapsed().as_secs() as i32) {
+                Some(f) => fps = f,
+                None => {}
+            }
         }
     }
 }

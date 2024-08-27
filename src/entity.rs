@@ -1,4 +1,5 @@
 // https://www.youtube.com/watch?v=ZyvEOnP6240
+// https://www.youtube.com/watch?v=VfcLxkO_ex4
 
 use rand::Rng;
 use sfml::{graphics::Color, system::Vector2f};
@@ -20,8 +21,8 @@ pub struct Entity {
 impl Entity {
     pub fn new(pos: Vector2f, speed: f32, max_speed: f32, target_dir: Vector2f) -> Self {
         let mut rng = rand::thread_rng();
-        let min_rgba = (15, 0, 0, 50);
-        let max_rgba = (255, 25, 185, 200);
+        let min_rgba = (15, 0, 0, 30);
+        let max_rgba = (255, 25, 185, 120);
         let size_range = (1.0, 10.0);
 
         return Self {
@@ -41,14 +42,16 @@ impl Entity {
         };
     }
 
-    pub fn update(&mut self, bounds: (f32, f32, f32, f32)) {
-        // Map color to current_speed
-        if self.change_color_vel_rg {
-            self.color.r =
-                World::map(self.vel.x.abs(), self.speed, self.max_speed, 30.0, 255.0) as u8;
-        } else {
-            self.color.g =
-                World::map(self.vel.y.abs(), self.speed, self.max_speed, 0.0, 50.0) as u8;
+    pub fn update(&mut self, bounds: (f32, f32, f32, f32), map_color: bool) {
+        // Map color to target dir
+        if map_color {
+            if self.change_color_vel_rg {
+                self.color.r =
+                    World::map(self.vel.x.abs(), self.speed, self.max_speed, 30.0, 255.0) as u8;
+            } else {
+                self.color.g =
+                    World::map(self.vel.y.abs(), self.speed, self.max_speed, 0.0, 50.0) as u8;
+            }
         }
 
         // Apply velocity calculations and limit to max speed

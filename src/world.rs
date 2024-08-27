@@ -2,7 +2,10 @@ use std::f32::consts;
 
 use rand::Rng;
 use sfml::{
-    graphics::{CircleShape, RenderTarget, RenderTexture, RenderWindow, Shape, Transformable},
+    graphics::{
+        CircleShape, Color, RectangleShape, RenderTarget, RenderTexture, RenderWindow, Shape,
+        Transformable,
+    },
     system::Vector2f,
 };
 
@@ -44,19 +47,19 @@ impl World {
         };
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, map_color: bool) {
         for entity in &mut self.entities {
-            entity.update(self.bounds);
+            entity.update(self.bounds, map_color);
         }
     }
 
     pub fn draw(&self, target: &mut RenderTexture) {
-        let mut shape: CircleShape = CircleShape::new(1.0, 3);
+        let mut shape: RectangleShape = RectangleShape::new();
 
         for entity in &self.entities {
             shape.set_fill_color(entity.get_color());
             shape.set_position(entity.get_pos());
-            shape.set_radius(entity.get_size());
+            shape.set_size(Vector2f::new(entity.get_size(), entity.get_size()));
             shape.set_rotation(
                 f32::atan2(
                     entity.get_target_dir_norm().x,
@@ -68,7 +71,7 @@ impl World {
         }
     }
 
-    pub fn set_entity_focus_point(&mut self, origin: Vector2f, inverse: bool) {
+    pub fn set_entity_focus_point(&mut self, origin: Vector2f, inverse: bool, focus_strength: f32) {
         // let angle_to_focus = atan2f(origin.y, origin.x) - atan2f(entity.get_pos().y, entity.get_pos().x);
         for entity in &mut self.entities {
             let x_dist = entity.get_pos().x - origin.x;
@@ -81,9 +84,9 @@ impl World {
                 Vector2f::new(force_vec.x / force_vec_len, force_vec.y / force_vec_len);
 
             if inverse {
-                entity.apply_force(-force_vec_norm, 0.07);
+                entity.apply_force(-force_vec_norm, focus_strength);
             } else {
-                entity.apply_force(force_vec_norm, 0.07);
+                entity.apply_force(force_vec_norm, focus_strength);
             }
         }
     }
