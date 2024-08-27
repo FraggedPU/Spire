@@ -23,14 +23,17 @@ impl World {
 
         // Populate
         for _ in 0..num_entities {
-            let rand_pos = Vector2f::new(
-                rng.gen_range(bounds.0..bounds.2),
-                rng.gen_range(bounds.1..bounds.3),
-            );
+            let pos = Vector2f::new(75.0, 75.0);
+            let target_dir_norm = Vector2f::new(rng.gen_range(0.5..1.0), rng.gen_range(0.5..1.0));
             let rand_acceleration = rng.gen_range(base_accel_range.0..base_accel_range.1);
             let rand_max_speed = rng.gen_range(max_speed_range.0..max_speed_range.1);
 
-            temp_entity_vec.push(Entity::new(rand_pos, rand_acceleration, rand_max_speed));
+            temp_entity_vec.push(Entity::new(
+                pos,
+                rand_acceleration,
+                rand_max_speed,
+                target_dir_norm,
+            ));
         }
 
         return Self {

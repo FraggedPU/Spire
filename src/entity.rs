@@ -14,7 +14,7 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn new(pos: Vector2f, speed: f32, max_speed: f32) -> Self {
+    pub fn new(pos: Vector2f, speed: f32, max_speed: f32, target_dir: Vector2f) -> Self {
         let mut rng = rand::thread_rng();
         let min_rgba = (15, 0, 0, 10);
         let max_rgba = (255, 25, 185, 100);
@@ -25,7 +25,7 @@ impl Entity {
             vel: Vector2f::new(0.0, 0.0),
             speed: speed,
             max_speed: max_speed,
-            target_dir: Vector2f::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)),
+            target_dir: target_dir,
             color: Color::rgba(
                 rng.gen_range(min_rgba.0..max_rgba.0),
                 rng.gen_range(min_rgba.1..max_rgba.1),

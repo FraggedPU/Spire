@@ -2,8 +2,8 @@ use std::{cell::RefCell, time::Instant};
 
 use sfml::{
     graphics::{
-        CircleShape, Color, Drawable, RenderStates, RenderTarget, RenderTexture, RenderWindow,
-        Shader, ShaderType, Shape, Sprite, Texture, Transformable,
+        CircleShape, Color, Drawable, Font, RenderStates, RenderTarget, RenderTexture,
+        RenderWindow, Shader, ShaderType, Shape, Sprite, Text, Texture, Transformable,
     },
     system::Vector2f,
     window::{Event, Key, Style},
@@ -15,28 +15,30 @@ mod world;
 
 fn main() {
     // Set up window handle and render states
-    const WINDOW_WIDTH: u32 = 900;
+    const WINDOW_WIDTH: u32 = 1400;
     const WINDOW_HEIGHT: u32 = 900;
     const SIM_OFFSET: f32 = 35.0;
     let mut window = RenderWindow::new(
         (WINDOW_WIDTH, WINDOW_HEIGHT),
         "Spire",
-        Style::CLOSE,
+        Style::TITLEBAR,
         &Default::default(),
     );
     let mut main_render_states = RenderStates::default();
     window.set_vertical_sync_enabled(true);
 
-    // Set up pre-fx render texture
+    // Set up pre-fx render texture - WIP
     let mut pre_render_texture = RenderTexture::new(WINDOW_WIDTH, WINDOW_HEIGHT).unwrap();
 
-    // Load shaders
+    // Load resources
     let mut fx_blur_frag_shader: RefCell<Shader> =
         Shader::from_file("./res/shaders/blur_frag.glsl", ShaderType::Fragment)
             .unwrap()
             .into();
     let mut fx_blur_vert_shader: Shader =
         Shader::from_file("./res/shaders/blur_vert.glsl", ShaderType::Vertex).unwrap();
+
+    let default_font = Font::from_file("./res/fonts/Matemasie-Regular.ttf").unwrap();
 
     // Set up tick system
     const UPDATE_TICK_TIME_MS: u128 = 25;
@@ -50,8 +52,8 @@ fn main() {
     // Initiate sim logic
     let mut world = World::new(
         40000,
-        (0.005, 0.07),
-        (0.75, 5.5),
+        (0.35, 0.5),
+        (5., 12.5),
         (
             SIM_OFFSET,
             SIM_OFFSET,
@@ -64,6 +66,7 @@ fn main() {
     let mut focus_point_inversed = false;
     let mut draw_cursor = false;
     let mut mapped_cursor_pos = Vector2f::default();
+    let mut user_has_clicked_anywhere = false;
 
     let mut cursor_shape = CircleShape::new(6.0, 20);
     cursor_shape.set_fill_color(Color::rgba(33, 33, 33, 150));
@@ -81,6 +84,7 @@ fn main() {
                 } => return,
                 Event::MouseButtonPressed { .. } => {
                     follow_mouse_pos = !follow_mouse_pos;
+                    user_has_clicked_anywhere = true;
                 }
                 Event::KeyPressed { code: Key::E, .. } => {
                     focus_point_inversed = !focus_point_inversed;
@@ -130,6 +134,16 @@ fn main() {
                 );
                 cursor_shape.set_position(draw_cursor_pos);
                 pre_render_texture.draw(&cursor_shape);
+            }
+
+            if !user_has_clicked_anywhere {
+                let mut hint_text = Text::new("CIICK", &default_font, 15); // TODO: remove this jank make render texture unmirrored
+                hint_text.set_position(Vector2f::new(
+                    window.size().x as f32 / 2.0 - hint_text.get_scale().x,
+                    window.size().y as f32 / 2.0 - hint_text.get_scale().y,
+                ));
+
+                pre_render_texture.draw(&hint_text);
             }
 
             let mut render_texture_sprite = Sprite::with_texture(&pre_render_texture.texture());
