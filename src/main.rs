@@ -2,8 +2,8 @@ use std::{cell::RefCell, time::Instant};
 
 use sfml::{
     graphics::{
-        CircleShape, Color, RenderStates, RenderTarget, RenderTexture, RenderWindow, Shader,
-        ShaderType, Sprite, Texture,
+        CircleShape, Color, Drawable, RenderStates, RenderTarget, RenderTexture, RenderWindow,
+        Shader, ShaderType, Shape, Sprite, Texture, Transformable,
     },
     system::Vector2f,
     window::{Event, Key, Style},
@@ -21,7 +21,7 @@ fn main() {
     let mut window = RenderWindow::new(
         (WINDOW_WIDTH, WINDOW_HEIGHT),
         "Spire",
-        Style::TITLEBAR,
+        Style::CLOSE,
         &Default::default(),
     );
     let mut main_render_states = RenderStates::default();
@@ -62,6 +62,13 @@ fn main() {
 
     let mut follow_mouse_pos = false;
     let mut focus_point_inversed = false;
+    let mut draw_cursor = false;
+    let mut mapped_cursor_pos = Vector2f::default();
+
+    let mut cursor_shape = CircleShape::new(6.0, 20);
+    cursor_shape.set_fill_color(Color::rgba(33, 33, 33, 150));
+    cursor_shape.set_outline_color(Color::rgb(200, 200, 210));
+    cursor_shape.set_outline_thickness(3.0);
 
     // Main sim loop
     loop {
@@ -72,11 +79,14 @@ fn main() {
                 | Event::KeyPressed {
                     code: Key::Escape, ..
                 } => return,
-                Event::MouseButtonPressed { button, x, y } => {
+                Event::MouseButtonPressed { .. } => {
                     follow_mouse_pos = !follow_mouse_pos;
                 }
                 Event::KeyPressed { code: Key::E, .. } => {
                     focus_point_inversed = !focus_point_inversed;
+                }
+                Event::KeyPressed { code: Key::R, .. } => {
+                    draw_cursor = !draw_cursor;
                 }
                 _ => {}
             }
@@ -84,14 +94,19 @@ fn main() {
 
         // Update sim every UPDATE_TICK_TIME
         if last_update_tick.elapsed().as_millis() >= UPDATE_TICK_TIME_MS {
+            mapped_cursor_pos = Vector2f::new(
+                window.mouse_position().x as f32,
+                World::map(
+                    window.mouse_position().y as f32,
+                    WINDOW_HEIGHT as f32,
+                    0.0,
+                    0.0,
+                    WINDOW_HEIGHT as f32,
+                ),
+            ); // Quick and dirty fix for a quick and dirty project..
+
             if follow_mouse_pos {
-                world.set_entity_focus_point(
-                    Vector2f::new(
-                        window.mouse_position().x as f32,
-                        window.mouse_position().y as f32,
-                    ),
-                    focus_point_inversed,
-                );
+                world.set_entity_focus_point(mapped_cursor_pos, focus_point_inversed);
             }
             world.update();
             last_update_tick = Instant::now();
@@ -107,10 +122,22 @@ fn main() {
             }
 
             world.draw(&mut pre_render_texture);
-            window.draw_with_renderstates(
-                &Sprite::with_texture(&pre_render_texture.texture()),
-                &main_render_states,
-            );
+
+            if draw_cursor {
+                let draw_cursor_pos = Vector2f::new(
+                    mapped_cursor_pos.x - cursor_shape.radius() / 2.0,
+                    mapped_cursor_pos.y - cursor_shape.radius() / 2.0,
+                );
+                cursor_shape.set_position(draw_cursor_pos);
+                pre_render_texture.draw(&cursor_shape);
+            }
+
+            let mut render_texture_sprite = Sprite::with_texture(&pre_render_texture.texture());
+            let render_texture_origin = Vector2f::new(0.0, 0.0);
+            render_texture_sprite.set_origin(render_texture_origin);
+            render_texture_sprite.rotate(0.0);
+
+            window.draw_with_renderstates(&render_texture_sprite, &main_render_states);
 
             window.display();
 

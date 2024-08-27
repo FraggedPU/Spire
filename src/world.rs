@@ -1,12 +1,10 @@
 use rand::Rng;
 use sfml::{
-    graphics::{
-        CircleShape, RenderTarget, RenderTexture, RenderWindow, Shape, Transformable
-    },
+    graphics::{CircleShape, RenderTarget, RenderTexture, RenderWindow, Shape, Transformable},
     system::Vector2f,
 };
 
-use crate::entity::{Entity};
+use crate::entity::Entity;
 
 pub struct World {
     entities: Vec<Entity>,
@@ -64,17 +62,21 @@ impl World {
             let x_dist = entity.get_pos().x - origin.x;
             let y_dist = entity.get_pos().y - origin.y;
             let radians = f32::atan2(y_dist, x_dist);
-            
+
             let force_vec = -Vector2f::new(radians.cos(), radians.sin());
             let force_vec_len = f32::sqrt(force_vec.x * force_vec.x + force_vec.y * force_vec.y); // BRO WTF WHY ISNT THIS IMPLEMENTED????
-            let force_vec_norm = Vector2f::new( force_vec.x / force_vec_len, force_vec.y / force_vec_len);
+            let force_vec_norm =
+                Vector2f::new(force_vec.x / force_vec_len, force_vec.y / force_vec_len);
 
             if inverse {
                 entity.apply_force(-force_vec_norm, 0.07);
-            }
-            else {
+            } else {
                 entity.apply_force(force_vec_norm, 0.07);
             }
         }
+    }
+
+    pub fn map(n: f32, start1: f32, stop1: f32, start2: f32, stop2: f32) -> f32 {
+        return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
     }
 }

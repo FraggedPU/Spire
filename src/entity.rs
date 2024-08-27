@@ -1,10 +1,7 @@
 // https://www.youtube.com/watch?v=ZyvEOnP6240
 
 use rand::Rng;
-use sfml::{
-    graphics::Color,
-    system::Vector2f,
-};
+use sfml::{graphics::Color, system::Vector2f};
 
 pub struct Entity {
     pos: Vector2f,
@@ -50,14 +47,17 @@ impl Entity {
             self.vel.y = self.max_speed;
         }
 
-        // Reverse velocity on collide with map bounds + random walk
+        // Reverse velocity on collide with map bounds + random walk + pushoff to middle
+        let arena_middle = Vector2f::new(bounds.2 / 2.0 - bounds.0, bounds.3 / 2.0 - bounds.1);
         if self.pos.x <= bounds.0 || self.pos.x + self.size >= bounds.2 {
             self.vel.x = -self.vel.x;
             self.set_random_target();
+            self.push_towards_pos(arena_middle, 1.0);
         }
         if self.pos.y <= bounds.1 || self.pos.y + self.size >= bounds.3 {
             self.vel.y = -self.vel.y;
             self.set_random_target();
+            self.push_towards_pos(arena_middle, 1.0);
         }
 
         // Update position
@@ -84,5 +84,23 @@ impl Entity {
     pub fn apply_force(&mut self, f_norm: Vector2f, strength: f32) {
         self.vel += f_norm * strength;
         self.target_dir = f_norm;
+    }
+
+    pub fn push_towards_pos(&mut self, pos: Vector2f, strength: f32) {
+        let x_dist = self.pos.x - pos.x;
+        let y_dist = self.pos.y - pos.y;
+        let radians = f32::atan2(y_dist, x_dist);
+
+        let relative_pos_to_vec = -Vector2f::new(radians.cos(), radians.sin());
+        let rel_pos_to_vec_len = f32::sqrt(
+            relative_pos_to_vec.x * relative_pos_to_vec.x
+                + relative_pos_to_vec.y * relative_pos_to_vec.y,
+        ); // BRO WTF WHY ISNT THIS IMPLEMENTED????
+        let rel_pos_to_vec_norm = Vector2f::new(
+            relative_pos_to_vec.x / rel_pos_to_vec_len,
+            relative_pos_to_vec.y / rel_pos_to_vec_len,
+        );
+
+        self.apply_force(rel_pos_to_vec_norm, strength);
     }
 }
