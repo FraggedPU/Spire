@@ -1,6 +1,5 @@
 # Spire
-A very simple particle sim using the amazing [rust-sfml](https://github.com/jeremyletang/rust-sfml/tree/master)
-WIP
+A very simple interactable particle sim built with the amazing [rust-sfml](https://github.com/jeremyletang/rust-sfml/tree/master)
 
 ## Screenshots
 ![Screenshot from 2024-08-27 14-34-54](https://github.com/user-attachments/assets/4b8a8be9-2aa3-437e-88ee-b7d773e967c0)
