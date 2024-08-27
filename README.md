@@ -1,5 +1,5 @@
 # Spire
-A very simple particle physics sim
+A very simple particle sim using the amazing [rust-sfml](https://github.com/jeremyletang/rust-sfml/tree/master)
 WIP
 
 ## Screenshots
