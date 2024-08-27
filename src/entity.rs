@@ -3,6 +3,9 @@
 use rand::Rng;
 use sfml::{graphics::Color, system::Vector2f};
 
+use crate::world::World;
+
+#[derive(Clone, Copy)]
 pub struct Entity {
     pos: Vector2f,
     vel: Vector2f,
@@ -11,14 +14,15 @@ pub struct Entity {
     target_dir: Vector2f,
     color: Color,
     size: f32,
+    change_color_vel_rg: bool,
 }
 
 impl Entity {
     pub fn new(pos: Vector2f, speed: f32, max_speed: f32, target_dir: Vector2f) -> Self {
         let mut rng = rand::thread_rng();
-        let min_rgba = (15, 0, 0, 10);
-        let max_rgba = (255, 25, 185, 100);
-        let size_range = (1.0, 6.0);
+        let min_rgba = (15, 0, 0, 50);
+        let max_rgba = (255, 25, 185, 200);
+        let size_range = (1.0, 10.0);
 
         return Self {
             pos: pos,
@@ -33,10 +37,20 @@ impl Entity {
                 rng.gen_range(min_rgba.3..max_rgba.3),
             ),
             size: rng.gen_range(size_range.0..size_range.1),
+            change_color_vel_rg: rng.gen_bool(0.6),
         };
     }
 
     pub fn update(&mut self, bounds: (f32, f32, f32, f32)) {
+        // Map color to current_speed
+        if self.change_color_vel_rg {
+            self.color.r =
+                World::map(self.vel.x.abs(), self.speed, self.max_speed, 30.0, 255.0) as u8;
+        } else {
+            self.color.g =
+                World::map(self.vel.y.abs(), self.speed, self.max_speed, 0.0, 50.0) as u8;
+        }
+
         // Apply velocity calculations and limit to max speed
         self.vel += self.target_dir * self.speed;
 
@@ -74,6 +88,13 @@ impl Entity {
 
     pub fn get_size(&self) -> f32 {
         return self.size;
+    }
+
+    pub fn get_target_dir_norm(&self) -> Vector2f {
+        return self.target_dir
+            / f32::sqrt(
+                self.target_dir.x * self.target_dir.x + self.target_dir.y * self.target_dir.y,
+            );
     }
 
     pub fn set_random_target(&mut self) {

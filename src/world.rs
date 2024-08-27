@@ -1,3 +1,5 @@
+use std::f32::consts;
+
 use rand::Rng;
 use sfml::{
     graphics::{CircleShape, RenderTarget, RenderTexture, RenderWindow, Shape, Transformable},
@@ -49,12 +51,19 @@ impl World {
     }
 
     pub fn draw(&self, target: &mut RenderTexture) {
-        let mut shape: CircleShape = CircleShape::new(1.0, 5);
+        let mut shape: CircleShape = CircleShape::new(1.0, 3);
 
         for entity in &self.entities {
             shape.set_fill_color(entity.get_color());
             shape.set_position(entity.get_pos());
             shape.set_radius(entity.get_size());
+            shape.set_rotation(
+                f32::atan2(
+                    entity.get_target_dir_norm().x,
+                    entity.get_target_dir_norm().y,
+                ) * 180.0
+                    / consts::PI,
+            );
             target.draw(&shape);
         }
     }

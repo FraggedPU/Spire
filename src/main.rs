@@ -51,7 +51,7 @@ fn main() {
 
     // Initiate sim logic
     let mut world = World::new(
-        40000,
+        45000,
         (0.35, 0.5),
         (5., 12.5),
         (
@@ -64,14 +64,14 @@ fn main() {
 
     let mut follow_mouse_pos = false;
     let mut focus_point_inversed = false;
-    let mut draw_cursor = false;
+    let mut draw_cursor = true;
     let mut mapped_cursor_pos = Vector2f::default();
     let mut user_has_clicked_anywhere = false;
 
-    let mut cursor_shape = CircleShape::new(6.0, 20);
+    let mut cursor_shape = CircleShape::new(4.0, 20);
     cursor_shape.set_fill_color(Color::rgba(33, 33, 33, 150));
     cursor_shape.set_outline_color(Color::rgb(200, 200, 210));
-    cursor_shape.set_outline_thickness(3.0);
+    cursor_shape.set_outline_thickness(2.0);
 
     // Main sim loop
     loop {
