@@ -6,7 +6,7 @@ use sfml::{
         RenderWindow, Shader, ShaderType, Shape, Sprite, Text, Texture, Transformable,
     },
     system::Vector2f,
-    window::{Event, Key, Style},
+    window::{joystick::COUNT, Event, Key, Style},
 };
 use world::World;
 
@@ -51,7 +51,7 @@ fn main() {
     let mut ticks_not_cleared = CLEAR_INTERVAL;
 
     let mut fps = 0;
-    let mut frames: i32 = 1;
+    let mut frames: i32 = 0;
     let mut last_frame_count = Instant::now();
 
     // Initiate sim logic
@@ -75,11 +75,14 @@ fn main() {
     let mut mapped_cursor_pos = Vector2f::default();
     let mut user_has_clicked_anywhere = false;
     let mut map_color = true;
+    let mut bg_clear_black = true;
     let mut current_focal_strength = 0.055;
 
     // UI
     const UI_INFO_DISPLAY_FONT_SIZE: u32 = 25;
     const UI_INFO_DISPLAY_OFFSET: f32 = 15.0;
+
+    let mut ui_font_color = Color::WHITE;
 
     let mut cursor_shape = CircleShape::new(4.0, 20);
     cursor_shape.set_fill_color(Color::rgba(33, 33, 33, 150));
@@ -98,9 +101,14 @@ fn main() {
         UI_INFO_DISPLAY_OFFSET * 3.0,
     ));
 
+    let mut hint_label = Text::new("click anywhere", &default_font, 22);
+    hint_label.set_position(Vector2f::new(
+        window.size().x as f32 / 2.0 - hint_label.global_bounds().width / 2.0,
+        window.size().y as f32 / 2.0 - hint_label.global_bounds().height / 2.0,
+    ));
+
     // Main sim loop
     loop {
-        // Poll events
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed
@@ -121,14 +129,14 @@ fn main() {
                 Event::KeyPressed { code: Key::T, .. } => {
                     map_color = !map_color;
                 }
-                Event::KeyPressed {
-                    code: Key::Subtract,
-                    ..
-                } => {
+                Event::KeyPressed { code: Key::Y, .. } => {
                     current_focal_strength -= FOCAL_STRENGHT_MOD;
                 }
-                Event::KeyPressed { code: Key::Add, .. } => {
+                Event::KeyPressed { code: Key::X, .. } => {
                     current_focal_strength += FOCAL_STRENGHT_MOD;
+                }
+                Event::KeyPressed { code: Key::Q, .. } => {
+                    bg_clear_black = !bg_clear_black;
                 }
                 _ => {}
             }
@@ -162,6 +170,16 @@ fn main() {
             focal_strength_label.set_string(&format!("force: {:.1$}", current_focal_strength, 3));
             fps_label.set_string(&format!("fps: {}", fps));
 
+            if bg_clear_black {
+                ui_font_color = Color::WHITE;
+            } else {
+                ui_font_color = Color::rgb(10, 10, 200);
+            }
+
+            focal_strength_label.set_fill_color(ui_font_color);
+            fps_label.set_fill_color(ui_font_color);
+            hint_label.set_fill_color(ui_font_color);
+
             if last_frame_count.elapsed().as_secs() >= 60 {
                 frames = 0;
                 last_frame_count = Instant::now();
@@ -171,7 +189,11 @@ fn main() {
         // Render sim every RENDER_TICK_TIME
         if last_render_tick.elapsed().as_millis() >= RENDER_TICK_TIME_MS {
             if ticks_not_cleared >= CLEAR_INTERVAL {
-                pre_render_texture.clear(Color::rgb(0, 0, 0));
+                if bg_clear_black {
+                    pre_render_texture.clear(Color::BLACK);
+                } else {
+                    pre_render_texture.clear(Color::WHITE);
+                }
                 ticks_not_cleared = 0;
             } else {
                 ticks_not_cleared += 1;
@@ -199,13 +221,7 @@ fn main() {
 
             // Draw UI to window over particle texture
             if !user_has_clicked_anywhere {
-                let mut hint_text = Text::new("click anywhere", &default_font, 22);
-                hint_text.set_position(Vector2f::new(
-                    window.size().x as f32 / 2.0 - hint_text.global_bounds().width / 2.0,
-                    window.size().y as f32 / 2.0 - hint_text.global_bounds().height / 2.0,
-                ));
-
-                window.draw(&hint_text);
+                window.draw(&hint_label);
             }
 
             window.draw(&focal_strength_label);
