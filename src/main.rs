@@ -56,7 +56,7 @@ fn main() {
 
     // Initiate sim logic
     let mut world = World::new(
-        30000,
+        35000,
         (0.35, 0.5),
         (5., 12.5),
         (
@@ -75,7 +75,7 @@ fn main() {
     let mut mapped_cursor_pos = Vector2f::default();
     let mut user_has_clicked_anywhere = false;
     let mut map_color = true;
-    let mut current_focal_strength = 0.07;
+    let mut current_focal_strength = 0.055;
 
     // UI
     const UI_INFO_DISPLAY_FONT_SIZE: u32 = 25;

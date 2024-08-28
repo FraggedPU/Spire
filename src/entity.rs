@@ -15,14 +15,14 @@ pub struct Entity {
     target_dir: Vector2f,
     color: Color,
     size: f32,
-    change_color_vel_rg: bool,
+    change_color_vel_type: bool,
 }
 
 impl Entity {
     pub fn new(pos: Vector2f, speed: f32, max_speed: f32, target_dir: Vector2f) -> Self {
         let mut rng = rand::thread_rng();
-        let min_rgba = (15, 0, 0, 30);
-        let max_rgba = (255, 25, 185, 120);
+        let min_rgba = (15, 0, 0, 45);
+        let max_rgba = (255, 25, 185, 145);
         let size_range = (1.0, 10.0);
 
         return Self {
@@ -38,19 +38,29 @@ impl Entity {
                 rng.gen_range(min_rgba.3..max_rgba.3),
             ),
             size: rng.gen_range(size_range.0..size_range.1),
-            change_color_vel_rg: rng.gen_bool(0.6),
+            change_color_vel_type: rng.gen_range(0..2) != 0,
         };
     }
 
     pub fn update(&mut self, bounds: (f32, f32, f32, f32), map_color: bool) {
         // Map color to target dir
         if map_color {
-            if self.change_color_vel_rg {
-                self.color.r =
-                    World::map(self.vel.x.abs(), self.speed, self.max_speed, 30.0, 255.0) as u8;
+            if self.change_color_vel_type {
+                self.color.r = World::map(
+                    self.vel.x.abs(),
+                    self.max_speed - self.max_speed / 2.0,
+                    self.max_speed,
+                    100.0,
+                    255.0,
+                ) as u8;
             } else {
-                self.color.g =
-                    World::map(self.vel.y.abs(), self.speed, self.max_speed, 0.0, 50.0) as u8;
+                self.color.r = World::map(
+                    self.vel.y.abs(),
+                    self.max_speed - self.max_speed / 2.0,
+                    self.max_speed,
+                    100.0,
+                    255.0,
+                ) as u8;
             }
         }
 
